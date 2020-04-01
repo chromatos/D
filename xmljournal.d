@@ -20,6 +20,7 @@ import
 	std.algorithm,
 	std.process,
 	std.datetime;
+import std.xml:encode;
 import std.conv:to;
 
 // Globals for crutchy
@@ -49,7 +50,7 @@ auto array2xml(string[string] items)
 	foreach(key, val; items)
 	{
 		if(val.length)
-			result~= "<"~key~">"~val~"</"~key~">\n";
+			result~= "<"~key~">"~val.encode~"</"~key~">\n";
 	}
 	return result;
 }
@@ -105,12 +106,13 @@ void write_log(Stream_Properties props, char[] message, State state=State.runnin
 
 void write_log(Stream_Properties props, string[string] items, State state=State.running)
 {
-	auto buffer = "<event>\n<time>"~Clock.currTime(UTC()).toISOExtString~"</time>\n"
-	~"<name>"~props.name~"</name>\n";
+	auto buffer = "<event>\n<time>"~Clock.currTime(UTC()).toISOExtString~"</time>\n";
 
 // Being a little lazy here. These are only set for the stdin socket and systemd will send these values in its messages from the main journaling socket.
+	if(props.name)
+		buffer~="<name>"~props.name.encode~"</name>\n";
 	if(props.unit)
-		buffer~="<unit>"~props.unit~"</unit>\n";
+		buffer~="<unit>"~props.unit.encode~"</unit>\n";
 	if(state!= State.running)
 		buffer~="<state>"~state~"</state>\n";
 
@@ -302,7 +304,7 @@ unittest
 	assert(x.extract("") == "");
 }
 
-//TODO This one will fail if your array happens to be stored in a different order. Do some sorting.
+//TODO This one will fail if your array happens to be in a different order. Do some sorting.
 unittest
 {
 	auto x = ["a":"zero", "b":"one","c":"two"];
